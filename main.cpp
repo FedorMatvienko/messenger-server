@@ -4,6 +4,9 @@
 #include <jsoncpp/json/json.h>
 #include <string>
 
+#include <codecvt>
+#include <locale>
+
 //Файлы для работы с сокетами
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -32,12 +35,14 @@ class workF
         file.close();
     }
 };
+
 int main()
 {
-    setlocale(LC_ALL, "");
+    std::string local = setlocale(LC_ALL, "");
+    std::wstring local_name(local.begin(),local.end());
+    std::wcout << L"Локаль: " << local_name << std::endl;
     workF f;
-    std::wstring str = L"Пример строки символов";
-    f.print(str);
+    std::wstring str;
 
     // cout << "server" << endl;
     // Json::Value config;
@@ -101,23 +106,21 @@ int main()
         wcout << L"" << endl;
         exit(EXIT_FAILURE);
     }
-
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
     while ( str != L"-exit" )
     {
         string s;
         memset( buffer, 0x00, 1024 );
         valread = read(new_socket, buffer, 1024);
-        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
         s = buffer;
         str = converter.from_bytes(s);
-        
-        
         f.print( str );
-        if ( send(new_socket, hello.c_str(), hello.size(), 0) == -1 )
+        if ( send(new_socket, hello.c_str(), hello.size()+1, 0) == -1 )
         {
             break;
         }
         wcout << str << endl;
+        str.clear();
     }
 
     send (new_socket, hello.c_str(), hello.size(), 0);
